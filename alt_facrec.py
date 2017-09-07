@@ -6,6 +6,7 @@ Created on Tue Sep  5 10:13:05 2017
 @author: traies
 """
 import numpy as np
+from sklearn import svm
 
 def save_8_bit_pgm(filepath, arr, width, height):
     with open(filepath, 'wb') as img:
@@ -37,22 +38,72 @@ def closest_aprox_eucl_distance(proj_vect, train_mat):
     return a
 
 def get_accuracy_benchmark(eigfaces, train_mat, mean, base_path, subjects, samples, base_samples):
-    success = 0
+    # get averages matrix
+    avg_mat = []
     for i in range(subjects):
-        for j in range(samples):
+        subj_list = []
+        for j in range(base_samples):
+            subj = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
+            subj -= mean
+            proj = subj * eigfaces
+            subj_list.append(np.squeeze(np.asarray(proj)))
+        subj_list_m = np.matrix(subj_list)
+        x = [np.mean(subj_list_m[:, i]) for i in range(subj_list_m.shape[1])]
+        avg_mat.append(x)
+    avg_mat = np.matrix(avg_mat)
+    
+    
+    success = 0
+    fail = 0
+    for i in range(subjects):
+        for j in range(base_samples, samples):
             test = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
             test -= mean
             proj = test * eigfaces
-            pred = closest_aprox_eucl_distance(proj, train_mat)
-            if pred // base_samples == i:
+            pred = closest_aprox_eucl_distance(proj, avg_mat)
+            if pred == i:
                 success += 1
-    print("success rate: "+ str(success / (subjects * samples)))
+            else:
+                fail += 1
+    print("success rate: %2f" % (success / (success + fail)))
+    print("fail rate: %2f" % (fail / (success + fail)))
     
 
+def predict_all(eigfaces, train_mat, mean, base_path, subjects, samples, base_samples):
+    
+    # get averages matrix
+    subj_list = []
+    class_list = []
+    for i in range(subjects):
+        for j in range(base_samples):
+            subj = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
+            subj -= mean
+            proj = subj * eigfaces
+            subj_list.append(np.squeeze(np.asarray(proj)))
+            class_list.append(i)
+    clf = svm.SVC(kernel="linear", C=1)
+    clf.fit(subj_list, class_list)
+    
+    success  = 0
+    fail = 0
+    for i in range(subjects):
+        for j in range(base_samples, samples):
+            test = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
+            test -= mean
+            proj = test * eigfaces
+            pred = clf.predict(proj)
+            if pred == i:
+                success += 1
+            else:
+                fail += 1
+    print("success rate: %2f" % (success / (success + fail)))
+    print("fail rate: %2f" % (fail / (success + fail)))
+    
+    
 if __name__ == "__main__":
     
     #Samples by subject
-    samples = 3
+    samples = 2
     
     #Number of subjects
     subjects = 40
@@ -68,7 +119,7 @@ if __name__ == "__main__":
         for j in range(1, samples + 1):
             s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
-    # I want columns to be subjects
+    # I want rows to be subjects
     mat = np.matrix(s)
     
     # Mean of each pixel
@@ -89,8 +140,6 @@ if __name__ == "__main__":
     # eigenfaces 
     eigenfaces = v * np.diag(sigma)
     
-    print(eigenfaces.shape)
-    
     # eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
@@ -103,8 +152,7 @@ if __name__ == "__main__":
     
     # Print prediction success rate
     get_accuracy_benchmark(v, t, x, "orl_faces", subjects, 10, samples)
-
-    
+    predict_all(v, t, x, "orl_faces", subjects, 10, samples)
     
     
     

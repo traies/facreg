@@ -7,6 +7,7 @@ Created on Wed Sep  6 14:42:01 2017
 """
 
 import numpy as np
+from sklearn import svm
 
 def save_8_bit_pgm(filepath, arr, width, height):
     with open(filepath, 'wb') as img:
@@ -61,7 +62,40 @@ def get_kernel_accuracy(eigvect_k, train_mat, mean, og_mat, base_path, subjects,
             test -= mean
             proj = np.power(test * og_mat.T, exp) * eigvect_k
             pred = closest_aprox_eucl_distance(proj, avg_mat)
-            print(pred, i)
+            if pred == i:
+                success += 1
+            else:
+                fail += 1
+    print("success rate: %2f" % (success / (success + fail)))
+    print("fail rate: %2f" % (fail / (success + fail)))
+
+def predict_all(eigvect_k, train_mat, mean, og_mat, base_path, subjects, samples, base_samples, exp):
+    
+    # get averages matrix
+    subj_list = []
+    class_list = []
+    for i in range(subjects):
+        for j in range(base_samples):
+            subj = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
+            subj -= mean
+            proj = np.power(subj * og_mat.T, exp) * eigvect_k
+            subj_list.append(np.squeeze(np.asarray(proj)))
+            class_list.append(i)
+    
+    clf = svm.SVC(kernel="linear", C=1)
+    clf.fit(subj_list, class_list)
+    
+    success  = 0
+    fail = 0
+    for i in range(subjects):
+        for j in range(base_samples, samples):
+            
+            test = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
+            test -= mean
+            
+            proj = np.power(test * og_mat.T, exp) * eigvect_k
+            
+            pred = clf.predict(proj)
             if pred == i:
                 success += 1
             else:
@@ -69,11 +103,16 @@ def get_kernel_accuracy(eigvect_k, train_mat, mean, og_mat, base_path, subjects,
     print("success rate: %2f" % (success / (success + fail)))
     print("fail rate: %2f" % (fail / (success + fail)))
     
-    
 if __name__ == "__main__":
     
+    #Base samples
+    bsamples = 8
+    
+    #Samples for principal components
+    pcomp = 1
+    
     #Samples by subject
-    samples = 3
+    samples = 10
     
     #Number of subjects
     subjects = 40
@@ -87,7 +126,7 @@ if __name__ == "__main__":
     exp = 2
     s = []
     for x in range(1, subjects + 1):
-        for j in range(1, samples + 1):
+        for j in range(1, pcomp + 1):
             s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
@@ -99,18 +138,29 @@ if __name__ == "__main__":
     # Center the matrix
     mat -= x
     
-    # Compute kernel matrix K (using k(x, y) = (x * y) ** subjects)
-    k = np.matrix(np.empty((subjects * samples, subjects * samples)))
+    # Compute kernel matrix K (using k(x, y) = (x * y) ** exp)
+    k = np.matrix(np.empty((subjects * pcomp, subjects * pcomp)))
+    
     for i in range(k.shape[0]):
         for j in range(k.shape[1]):
             # polynomial kernel
             k[i, j] = np.power(mat[i, :] * mat[j, :].T, exp)
             k[j, i] = k[i, j]
     
+    # n aux matrix
+    n = 1 / (subjects * pcomp)  * np.matrix(np.ones(((subjects * pcomp, subjects * pcomp))))
+
+    # Center k matrix
+    k = k - n * k - k * n + n * k * n 
     # Get eigenvectors and eigenvalues of K
     eigval_k, eigvect_k = np.linalg.eig(k)
-    eigvect_k /= (eigval_k ** 1/2)
+    
+    for x in range(len(eigval_k)):
+        eigvect_k[i] /= np.sqrt(eigval_k[i])
+    
     # Training predictions
     train_pred = k * eigvect_k
-    get_kernel_accuracy(eigvect_k, train_pred, x, mat, "orl_faces", subjects, 10, samples, exp)
-
+    
+    predict_all(eigvect_k, train_pred, x, mat, "orl_faces", subjects, samples, bsamples, exp)
+    get_kernel_accuracy(eigvect_k, train_pred, x, mat, "orl_faces", subjects, samples, bsamples, exp)
+    
