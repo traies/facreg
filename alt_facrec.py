@@ -24,7 +24,7 @@ def load_8_bit_pgm(filepath):
         img.readline() # maxgrey, should be 255
         arr = np.empty(width*height)
         for i in range(height*width):
-            arr[i] = int(ord(img.read(1)))
+            arr[i] = int(ord(img.read(1))) / 255
     return arr
 
 def closest_aprox_eucl_distance(proj_vect, train_mat):
@@ -69,41 +69,28 @@ def get_accuracy_benchmark(eigfaces, train_mat, mean, base_path, subjects, sampl
     print("fail rate: %2f" % (fail / (success + fail)))
     
 
-def predict_all(eigfaces, train_mat, mean, base_path, subjects, samples, base_samples):
+def predict_all(eigfaces, mat, testm, base_path, subjects, samples, base_samples):
     
-    # get averages matrix
-    subj_list = []
-    class_list = []
-    for i in range(subjects):
-        for j in range(base_samples):
-            subj = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
-            subj -= mean
-            proj = subj * eigfaces
-            subj_list.append(np.squeeze(np.asarray(proj)))
-            class_list.append(i)
-    clf = svm.SVC(kernel="linear", C=1)
-    clf.fit(subj_list, class_list)
+    matp = mat * eigfaces
+    class_list = [i for i in range(subjects) for j in range(base_samples)]
+    clf = svm.LinearSVC( random_state=0)
+    clf.fit(matp, class_list)
     
-    success  = 0
-    fail = 0
-    for i in range(subjects):
-        for j in range(base_samples, samples):
-            test = np.matrix(load_8_bit_pgm(base_path + "/s"+str(i+1)+"/"+str(j+1)+".pgm"))
-            test -= mean
-            proj = test * eigfaces
-            pred = clf.predict(proj)
-            if pred == i:
-                success += 1
-            else:
-                fail += 1
-    print("success rate: %2f" % (success / (success + fail)))
-    print("fail rate: %2f" % (fail / (success + fail)))
+    testp = testm * eigfaces
+    testl = [i for i in range(subjects) for j in range(base_samples, samples)]
+    return clf.score(testp, testl)
     
     
 if __name__ == "__main__":
     
+    #Base samples
+    bsamples = 6
+    
+    #Samples for principal components
+    pcomp = 6
+    
     #Samples by subject
-    samples = 2
+    samples = 10
     
     #Number of subjects
     subjects = 40
@@ -116,17 +103,17 @@ if __name__ == "__main__":
     
     s = []
     for x in range(1, subjects + 1):
-        for j in range(1, samples + 1):
+        for j in range(1, pcomp + 1):
             s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
     mat = np.matrix(s)
     
     # Mean of each pixel
-    x = [np.mean(mat[:, i]) for i in range(mat.shape[1])]
+    mean = mat.mean(axis=0)
     
     # Center the matrix
-    mat -= x
+    mat -= mean
     
     # svd of the matrix
     u, sigma, vt = np.linalg.svd(mat, full_matrices=False)
@@ -147,12 +134,21 @@ if __name__ == "__main__":
         e.append((a - min(a)) * 255 / (max(a) - min(a)))
     
     # print eigenfaces
-    for i in range(subjects * samples):
+    for i in range(subjects * pcomp):
         save_8_bit_pgm("alt_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
     
+    tests = []
+    for x in range(1, subjects + 1):
+        for j in range(pcomp+1, samples + 1):
+            tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+    testm = np.matrix(tests)
+    testm -= mean
+    
     # Print prediction success rate
-    get_accuracy_benchmark(v, t, x, "orl_faces", subjects, 10, samples)
-    predict_all(v, t, x, "orl_faces", subjects, 10, samples)
+    for i in range(1, v.shape[1]):
+        print("using {0} eigenvectors: {1}".format(i, predict_all(v[:, 0:i], mat, testm, "orl_faces", subjects, samples, bsamples)))
+        
+        
     
     
     
