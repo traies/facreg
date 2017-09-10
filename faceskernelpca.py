@@ -21,8 +21,8 @@ areasize    = horsize*versize
 
 #number of figures
 personno    = 40
-trnperper   = 9
-tstperper   = 1
+trnperper   = 6
+tstperper   = 4
 trnno       = personno*trnperper
 tstno       = personno*tstperper
 
@@ -64,7 +64,6 @@ K = K - np.dot(unoM,K) - np.dot(K,unoM) + np.dot(unoM,np.dot(K,unoM))
 
 #Autovalores y autovectores
 w,alpha = np.linalg.eigh(K)
-lambdas = w/trnno
 lambdas = w
 
 #Los autovalores vienen en orden descendente. Lo cambio 
@@ -103,7 +102,7 @@ for neigen in range(1,nmax):
     clf = svm.LinearSVC()
     clf.fit(improy,person.ravel())
     accs[neigen] = clf.score(imtstproy,persontst.ravel())
-    print('Precisión con {0} autocaras: {1} %\n'.format(neigen,accs[neigen]*100))
+    print('Precisión con {0} autocaras: {1}'.format(neigen,accs[neigen]*100))
 
 fig, axes = plt.subplots(1,1)
 axes.semilogy(range(nmax),(1-accs)*100)

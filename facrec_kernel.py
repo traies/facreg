@@ -84,9 +84,6 @@ if __name__ == "__main__":
     #Base samples
     bsamples = 6
     
-    #Samples for principal components
-    pcomp = 6
-    
     #Samples by subject
     samples = 10
     
@@ -101,8 +98,11 @@ if __name__ == "__main__":
     
     exp = 2
     s = []
+    
+    trainno = bsamples * subjects
+    testno = subjects * (samples - bsamples)
     for x in range(1, subjects + 1):
-        for j in range(1, pcomp + 1):
+        for j in range(1, bsamples + 1):
             s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
@@ -113,10 +113,10 @@ if __name__ == "__main__":
     mat -= mean
     
     # Compute kernel matrix K (using k(x, y) = (x * y) ** exp)
-    k = np.power(mat  * mat.T, exp) 
+    k = np.power(mat  * mat.T  / trainno + 1 , exp) 
     
     # n aux matrix
-    n = 1 / (subjects * pcomp)  * np.matrix(np.ones(((subjects * pcomp, subjects * pcomp))))
+    n = 1 / trainno * np.matrix(np.ones([trainno, trainno]))
 
     # Center k matrix
     k = k - n * k - k * n + n * k * n 
@@ -127,21 +127,21 @@ if __name__ == "__main__":
     eigvect_k = np.fliplr(eigvect_k)
     
     for i in range(len(eigval_k)):
-        eigvect_k[:, i] /= np.sqrt(eigval_k[i])
+        eigvect_k[:, i] = eigvect_k[:, i] / np.sqrt(abs(eigval_k[i]))
     
     tests = []
     for x in range(1, subjects + 1):
-        for j in range(pcomp+1, samples + 1):
+        for j in range(bsamples+1, samples + 1):
             tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
     testm = np.matrix(tests)
     testm -= mean
     
-    testp_k = np.power(testm * mat.T, exp)
+    testp_k = np.power(testm * mat.T  / trainno + 1, exp)
     
-    n2 = 1 / (subjects * (samples))  * np.matrix(np.ones(((subjects * (samples-bsamples), subjects *bsamples))))
+    n2 = 1 / trainno * np.matrix(np.ones([testno, trainno]))
+    
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
-    
-    trainproj = k.T * eigvect_k
+    trainproj = k * eigvect_k
     testp = testp_k * eigvect_k
     for i in range(1, eigvect_k.shape[1]):
         print("using {0} eigenvectors: {1}".format(i, predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)))
