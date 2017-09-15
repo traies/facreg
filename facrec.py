@@ -62,7 +62,7 @@ def get_accuracy_benchmark(eigfaces, train_mat, mean, base_path, subjects, sampl
 if __name__ == "__main__":
     
     #Number of subjects
-    subjects = 40
+    subjects = 1
     
     #Width of .pmg files
     width = 92
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     
     s = []
     for x in range(1, subjects + 1):
-        s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/1.pgm"))
+        s.append(load_8_bit_pgm("our_faces/s" + str(x) + "/1.pgm"))
     # I want columns to be subjects
     mat = np.matrix(s).transpose()
     # Mean of each pixel
@@ -99,14 +99,14 @@ if __name__ == "__main__":
     xi = x.astype(int)
     save_8_bit_pgm("mean.pgm", [int(i) for i in np.squeeze(np.asarray(xi[:,0]))], 92, 112)
     
-    for i in range(40):
+    for i in range(subjects):
         save_8_bit_pgm("eigenfaces/eigenface"+str(i)+".pgm", np.squeeze(np.asarray(e[:, i])), 92,112)
     
     # Initial projections on face space
     t = u.T * mat 
     
     # Print prediction success rate
-    get_accuracy_benchmark(u, t, x[:, 0], "orl_faces", 40, 10)
+    get_accuracy_benchmark(u, t, x[:, 0], "our_faces", subjects, 10)
     
     # compression test
 #    acc = 10

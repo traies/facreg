@@ -6,6 +6,8 @@ Created on Wed Sep  6 14:42:01 2017
 @author: traies
 """
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 from sklearn import svm
 
@@ -143,5 +145,20 @@ if __name__ == "__main__":
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
     trainproj = k * eigvect_k
     testp = testp_k * eigvect_k
-    for i in range(1, eigvect_k.shape[1]):
-        print("using {0} eigenvectors: {1}".format(i, predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)))
+    
+    g = [[],[]]
+    
+    for i in range(1, eigvect_k.shape[1]+1):
+        aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)
+        g[0].append(i)
+        g[1].append(aux)
+        print("using {0} eigenvectors: {1}".format(i, aux))
+        
+    plt.plot(g[0],g[1])
+    #plt.show()
+    plt.title('Prediction accuracy depending on the number of eigenvectors')
+    plt.ylabel('accuracy')
+    plt.xlabel('eigenvectors')
+    plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
+
+    

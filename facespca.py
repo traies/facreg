@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
 
-mypath      = 'orl_faces/'
+mypath      = 's1/'
 onlydirs    = [f for f in listdir(mypath) if isdir(join(mypath, f))]
 
 #image size
