@@ -82,13 +82,13 @@ def predict_all(trainproj, testp,  base_path, subjects, samples, base_samples):
 if __name__ == "__main__":
     
     #Base samples
-    bsamples = 6
+    bsamples = 9
     
     #Samples by subject
     samples = 10
     
     #Number of subjects
-    subjects = 40
+    subjects = 4
     
     #Width of .pmg files
     width = 92
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     testno = subjects * (samples - bsamples)
     for x in range(1, subjects + 1):
         for j in range(1, bsamples + 1):
-            s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            s.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
     mat = np.matrix(s)
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
-            tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            tests.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
     testm = np.matrix(tests)
     testm -= mean
     
@@ -143,5 +143,5 @@ if __name__ == "__main__":
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
     trainproj = k * eigvect_k
     testp = testp_k * eigvect_k
-    for i in range(1, eigvect_k.shape[1]):
-        print("using {0} eigenvectors: {1}".format(i, predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)))
+    for i in range(1, eigvect_k.shape[1]+1):
+        print("using {0} eigenvectors: {1}".format(i, predict_all(trainproj[:, 0:i], testp[:, 0:i], "our_faces", subjects, samples, bsamples)))
