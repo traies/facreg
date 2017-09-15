@@ -6,6 +6,8 @@ Created on Wed Sep  6 14:42:01 2017
 @author: traies
 """
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 from sklearn import svm
 
@@ -82,13 +84,13 @@ def predict_all(trainproj, testp,  base_path, subjects, samples, base_samples):
 if __name__ == "__main__":
     
     #Base samples
-    bsamples = 9
+    bsamples = 6
     
     #Samples by subject
     samples = 10
     
     #Number of subjects
-    subjects = 4
+    subjects = 40
     
     #Width of .pmg files
     width = 92
@@ -103,7 +105,7 @@ if __name__ == "__main__":
     testno = subjects * (samples - bsamples)
     for x in range(1, subjects + 1):
         for j in range(1, bsamples + 1):
-            s.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
     mat = np.matrix(s)
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
-            tests.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
     testm = np.matrix(tests)
     testm -= mean
     
@@ -143,5 +145,20 @@ if __name__ == "__main__":
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
     trainproj = k * eigvect_k
     testp = testp_k * eigvect_k
+    
+    g = [[],[]]
+    
     for i in range(1, eigvect_k.shape[1]+1):
-        print("using {0} eigenvectors: {1}".format(i, predict_all(trainproj[:, 0:i], testp[:, 0:i], "our_faces", subjects, samples, bsamples)))
+        aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)
+        g[0].append(i)
+        g[1].append(aux)
+        print("using {0} eigenvectors: {1}".format(i, aux))
+        
+    plt.plot(g[0],g[1])
+    #plt.show()
+    plt.title('Prediction accuracy depending on the number of eigenvectors')
+    plt.ylabel('accuracy')
+    plt.xlabel('eigenvectors')
+    plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
+
+    
