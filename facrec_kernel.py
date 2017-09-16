@@ -9,6 +9,9 @@ Created on Wed Sep  6 14:42:01 2017
 import matplotlib.pyplot as plt
 
 import numpy as np
+import svd as svd
+import time
+
 from sklearn import svm
 
 def save_8_bit_pgm(filepath, arr, width, height):
@@ -84,7 +87,7 @@ def predict_all(trainproj, testp,  base_path, subjects, samples, base_samples):
 if __name__ == "__main__":
     
     #Base samples
-    bsamples = 6
+    bsamples = 5
     
     #Samples by subject
     samples = 10
@@ -122,12 +125,22 @@ if __name__ == "__main__":
 
     # Center k matrix
     k = k - n * k - k * n + n * k * n 
+    
     # Get eigenvectors and eigenvalues of K
     eigval_k, eigvect_k = np.linalg.eigh(k)
+    sta = time.perf_counter()
+    eigval_k1, eigvect_k1 = svd.francis(k)
+    end = time.perf_counter()
+    print("tiempo de corrida: {}".format(end - sta))
+    
     
     eigval_k = np.flipud(eigval_k)
     eigvect_k = np.fliplr(eigvect_k)
     
+    for i in range(len(eigval_k)):
+        print(eigval_k[i], eigval_k1[i], abs(eigval_k[i] - eigval_k1[i]), i)
+    
+    exit(0)
     for i in range(len(eigval_k)):
         eigvect_k[:, i] = eigvect_k[:, i] / np.sqrt(abs(eigval_k[i]))
     

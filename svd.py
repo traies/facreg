@@ -7,8 +7,12 @@ Created on Sun Sep 10 20:18:28 2017
 """
 import numpy as np
 import random as rand
+import collections as coll
+
 def two_norm(v):
     return np.sum(np.power(v, 2))
+
+epsilon = 10 ** -4
 
 def two_by_two_eigval(M):
     a,b,c,d = M.flat
@@ -20,27 +24,53 @@ def two_by_two_eigval(M):
     return l1, l2
 
 
-def tridiag(A):
-    m = A.shape[0]
-    n = A.shape[1]
-    B = np.copy(A)
+def tridiag(B):
+    m = B.shape[0]
+    n = B.shape[1]
     b = False
     Q = np.eye(m)
-#    if abs(B[1, 0]) < 10 ** -10:
+    if abs(B[1, 0]) < 10 ** -10:
+            B[1, 0] = 0
+            b = True
+    else:
+        for k in range(n-1):
+            v = np.zeros(n)
+            alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:, k], ord=2)
+            r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
+            if abs(r) < epsilon:
+                continue
+            v[k+1] = (B[k+1,k] - alfa) / (2 * r)
+            v[k+2:] = B[k+2:, k] / (2 * r)
+            Qk = np.eye(m) - 2 * np.outer(v,v)
+            B = Qk.dot(B.dot(Qk))
+            Q = np.dot(Q, Qk)
+    return B, Q, b
+
+#def chase(B):
+#    m = B.shape[0]
+#    n = B.shape[1]
+#    b = False
+#    Q = np.eye(m)
+#    if abs(B[1, 0]) < epsilon:
 #            B[1, 0] = 0
 #            b = True
 #    else:
-    for k in range(n-2):
-        v = np.zeros(n)
-        alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:, k], ord=2)
-        r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
-        v[k+1] = (B[k+1,k] - alfa) / (2 * r)
-        v[k+2:] = B[k+2:, k] / (2 * r)
-        Qk = np.eye(m) - 2 * np.outer(v,v)
-        B = Qk.dot(B.dot(Qk))
-        Q = np.dot(Q, Qk)
-    
-    return B, Q, b
+#        for k in range(n-1):
+#            v = np.zeros(n)
+#            alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:, k], ord=2)
+#            r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
+#            if k < n-2 and abs(B[k+2,k]) < epsilon:
+#                B[k+2, k] = 0
+#                break
+#            if abs(r) < epsilon:
+#                break
+#            v[k+1] = (B[k+1,k] - alfa) / (2 * r)
+#            v[k+2:] = B[k+2:, k] / (2 * r)
+#            Qk = np.eye(m) - 2 * np.outer(v,v)
+#            B = Qk.dot(B.dot(Qk))
+#            Q = np.dot(Q, Qk)
+#    return B, Q, b
+
 
 def balance(A):
     n = A.shape[0]
@@ -57,12 +87,24 @@ def balance(A):
                 
     return B, d
                 
+def sort_eigval(B, Q):
+    sortlist = np.argsort(B)
+    Bp = np.empty(B.shape)
+    Qp = np.empty(Q.shape)
+    j = 0
+    for i in reversed(sortlist):
+        Bp[j] = B[i]
+        Qp[:, j] = Q[:, i]
+        j += 1
+    return Bp, Qp
+    
+    
+    
 def francis(A):
     B1, D = balance(A)
     Q = np.linalg.inv(D)
     
     B, Q1, _ = tridiag(B1)
-    
     Q = np.dot(Q, Q1)
     
     i = 0
@@ -83,21 +125,20 @@ def francis(A):
         Q0[i:i+3,i:i+3] = p
         Q = np.dot(Q, Q0)
         B = Q0.dot(B.dot(Q0))
-        #check if bulge
-#        if abs(B[i+2, i]) > 10 ** -10:
-#            B[i:j+1, i:j+1], Qk, b = tridiag(B[i:j+1, i:j+1])
-#            Q[i:j+1, i:j+1] = np.dot(Q[i:j+1, i:j+1], Qk)
-#            i = i + 1 if b else i
+        # check if bulge
+        if abs(B[i+2, i]) > epsilon:
+            B[i:j+1, i:j+1], Qk, b = tridiag(B[i:j+1, i:j+1])
+            Q[i:j+1, i:j+1] = np.dot(Q[i:j+1, i:j+1], Qk)
+            i = i + 1 if b else i
             
-        B[i:j+1, i:j+1], Qk, b = tridiag(B[i:j+1, i:j+1])
-        Q[i:j+1, i:j+1] = np.dot(Q[i:j+1, i:j+1], Qk)
+#        B[i:j+1, i:j+1], Qk, b = chase(B[i:j+1, i:j+1])
+#        Q[i:j+1, i:j+1] = np.dot(Q[i:j+1, i:j+1], Qk)
+        
         i = i + 1 if b else i
-#        else:
-#            B, D = balance(B)
-#            Q = np.dot(Q, np.linalg.inv(D))
             
         for x in range(i, j):
-            if abs(B[x+1, x]) < 10 ** -10:
+            print(x)
+            if abs(B[x+1, x]) < epsilon:
                 B[x+1, x] = 0.0
                 i += 1
             else:
@@ -117,14 +158,15 @@ def francis(A):
 #            B[j-1, j-1] = p1
 #            B[j,j] = p2
 #            j -= 1
-            
+
     if abs(B[j, j-1]) < np.finfo(np.float).eps * nor:
         B[j, j-1] = 0
     else:
         p1, p2 = two_by_two_eigval(B[-2:, -2:])
         B[j-1, j-1] = p1
         B[j,j] = p2
-    return np.diagonal(B), Q
+    B, Q = sort_eigval(np.diagonal(B), Q)
+    return B, Q
 
 def house_red(A):
     m = A.shape[0]
@@ -227,7 +269,7 @@ if __name__ == "__main__":
 #                   [ 1., -2.,  0., 1.],
 #                   [-2., 0.,  3., -2.],
 #                   [ 2., 1., -2., -1.]])
-    A = np.matrix([[ 4., 2., 1.],
+    A = np.matrix([[ 4., 3., 1.],
                    [ 3., 4., 2.],
                    [ 1., 2., 4.]])
 #    
