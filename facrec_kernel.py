@@ -135,8 +135,8 @@ if __name__ == "__main__":
     print("tiempo de corrida: {}".format(end - sta))
     
     
-    eigval_k = np.flipud(eigval_k)
-    eigvect_k = np.fliplr(eigvect_k)
+    eigval_k1 = np.flipud(eigval_k1)
+    eigvect_k1 = np.fliplr(eigvect_k1)
     
     for i in range(len(eigval_k)):
         print(eigval_k1[i], eigval_k[i], abs(eigval_k[i] - eigval_k1[i]), i)
