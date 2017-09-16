@@ -87,7 +87,7 @@ def predict_all(trainproj, testp,  base_path, subjects, samples, base_samples):
 if __name__ == "__main__":
     
     #Base samples
-    bsamples = 5
+    bsamples = 6
     
     #Samples by subject
     samples = 10
@@ -127,9 +127,10 @@ if __name__ == "__main__":
     k = k - n * k - k * n + n * k * n 
     
     # Get eigenvectors and eigenvalues of K
-    eigval_k, eigvect_k = np.linalg.eigh(k)
+    eigval_k1, eigvect_k1 = np.linalg.eigh(k)
+    
     sta = time.perf_counter()
-    eigval_k1, eigvect_k1 = svd.francis(k)
+    eigval_k, eigvect_k = svd.francis(k)
     end = time.perf_counter()
     print("tiempo de corrida: {}".format(end - sta))
     
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     eigvect_k = np.fliplr(eigvect_k)
     
     for i in range(len(eigval_k)):
-        print(eigval_k[i], eigval_k1[i], abs(eigval_k[i] - eigval_k1[i]), i)
+        print(eigval_k1[i], eigval_k[i], abs(eigval_k[i] - eigval_k1[i]), i)
     
     exit(0)
     for i in range(len(eigval_k)):
