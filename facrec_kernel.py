@@ -165,13 +165,13 @@ if __name__ == "__main__":
     for i in range(1, eigvect_k.shape[1]+1):
         aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)
         g[0].append(i)
-        g[1].append(aux)
+        g[1].append(aux*100)
         print("using {0} eigenvectors: {1}".format(i, aux))
         
     plt.plot(g[0],g[1])
     #plt.show()
-    plt.title('Prediction accuracy depending on the number of eigenvectors')
-    plt.ylabel('accuracy')
+    plt.suptitle('Prediction accuracy depending on the number of eigenvectors',fontweight='bold')
+    plt.ylabel('accuracy (%)')
     plt.xlabel('eigenvectors')
     plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
 
