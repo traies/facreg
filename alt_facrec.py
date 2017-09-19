@@ -7,6 +7,9 @@ Created on Tue Sep  5 10:13:05 2017
 """
 import numpy as np
 from sklearn import svm
+import svd as my_svd
+import time
+import matplotlib.pyplot as plt
 
 def save_8_bit_pgm(filepath, arr, width, height):
     with open(filepath, 'wb') as img:
@@ -69,25 +72,19 @@ def get_accuracy_benchmark(eigfaces, train_mat, mean, base_path, subjects, sampl
     print("fail rate: %2f" % (fail / (success + fail)))
     
 
-def predict_all(eigfaces, mat, testm, base_path, subjects, samples, base_samples):
+def predict_all(trainproj, testproj, class_list, testl):
     
-    matp = mat * eigfaces
-    class_list = [i for i in range(subjects) for j in range(base_samples)]
     clf = svm.LinearSVC( random_state=0)
-    clf.fit(matp, class_list)
+    clf.fit(trainproj, class_list)
     
-    testp = testm * eigfaces
-    testl = [i for i in range(subjects) for j in range(base_samples, samples)]
-    return clf.score(testp, testl)
+    
+    return clf.score(testproj, testl)
     
     
 if __name__ == "__main__":
     
     #Base samples
     bsamples = 6
-    
-    #Samples for principal components
-    pcomp = 6
     
     #Samples by subject
     samples = 10
@@ -101,31 +98,33 @@ if __name__ == "__main__":
     #Height of .pmg files
     height = 112
     
+    trainno = bsamples * subjects
+    testno = subjects * (samples - bsamples)
     s = []
     for x in range(1, subjects + 1):
-        for j in range(1, pcomp + 1):
+        for j in range(1, bsamples + 1):
             s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
-    mat = np.matrix(s)
+    mat = np.array(s)
     
     # Mean of each pixel
     mean = mat.mean(axis=0)
     
     # Center the matrix
     mat -= mean
-    
-    # svd of the matrix
-    u, sigma, vt = np.linalg.svd(mat, full_matrices=False)
-    
-    # untranspose vector v
-    v = vt.T
-    
-    # principal components
-    t = mat * v
+#    u, sigma, vt = np.linalg.svd(mat, full_matrices=False)
+    # cov of the matrix
+    cov = 1 / (trainno - 1) *  mat @ mat.T
+    sta = time.perf_counter()
+    eigval, eigvect = my_svd.francis(cov)
+    end = time.perf_counter()
+    print("tiempo de corrida: {}".format(end - sta))
     
     # eigenfaces 
-    eigenfaces = v * np.diag(sigma)
+    eigvect = 1 / (trainno - 1) * eigvect @ mat
+    eigenfaces = np.diag(eigval) @ eigvect 
+    
     
     # eigenfaces normalization for image
     e = []
@@ -134,22 +133,32 @@ if __name__ == "__main__":
         e.append((a - min(a)) * 255 / (max(a) - min(a)))
     
     # print eigenfaces
-    for i in range(subjects * pcomp):
+    for i in range(subjects * bsamples):
         save_8_bit_pgm("alt_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
     
     tests = []
     for x in range(1, subjects + 1):
-        for j in range(pcomp+1, samples + 1):
+        for j in range(bsamples+1, samples + 1):
             tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
-    testm = np.matrix(tests)
+    testm = np.array(tests)
     testm -= mean
     
+    trainproj = mat @ eigvect.T 
+    testproj = testm @ eigvect.T
     # Print prediction success rate
-    for i in range(1, v.shape[1]):
-        print("using {0} eigenvectors: {1}".format(i, predict_all(v[:, 0:i], mat, testm, "orl_faces", subjects, samples, bsamples)))
+    class_list = [i for i in range(subjects) for j in range(bsamples)]
+    testl = [i for i in range(subjects) for j in range(bsamples, samples)]
+    g = [[],[]]
+    for i in range(1, trainproj.shape[1] + 1):
+        aux = predict_all(trainproj[:, 0:i], testproj[:, 0:i], class_list, testl)
+        g[0].append(i)
+        g[1].append(aux*100)
+        print("using {0} eigenvectors: {1}".format(i, aux))
         
-        
-    
-    
-    
+    plt.plot(g[0],g[1])
+    #plt.show()
+    plt.suptitle('Prediction accuracy depending on the number of eigenvectors',fontweight='bold')
+    plt.ylabel('accuracy (%)')
+    plt.xlabel('eigenvectors')
+    plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
     

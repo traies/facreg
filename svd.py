@@ -6,11 +6,6 @@ Created on Sun Sep 10 20:18:28 2017
 @author: traies
 """
 import numpy as np
-import random as rand
-import collections as coll
-
-def two_norm(v):
-    return np.sum(np.power(v, 2))
 
 epsilon = 10 ** -5
 
@@ -27,37 +22,28 @@ def two_by_two_eigval(M):
 def tridiag(B):
     m = B.shape[0]
     n = B.shape[1]
-    b = False
     Q = np.eye(m)
-    if abs(B[1, 0]) < epsilon:
-            B[1, 0] = 0
-            b = True
-    else:
-        for k in range(n-1):
-            v = np.zeros(n)
-            alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:, k], ord=2)
-            r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
-            if abs(r) < epsilon:
-                break
-            v[k+1] = (B[k+1,k] - alfa) / (2 * r)
-            v[k+2:] = B[k+2:, k] / (2 * r)
-            Qk = np.eye(m) - 2 * np.outer(v,v)
-            B = Qk.dot(B.dot(Qk))
-            Q = np.dot(Q, Qk)
-    return B, Q, b
+    for k in range(n-1):
+        v = np.zeros(n)
+        alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:, k], ord=2)
+        r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
+        if abs(r) < epsilon:
+            break
+        v[k+1] = (B[k+1,k] - alfa) / (2 * r)
+        v[k+2:] = B[k+2:, k] / (2 * r)
+        Qk = np.eye(m) - 2 * np.outer(v,v)
+        B = Qk @ B @ Qk
+        Q = Q @ Qk
+    return B, Q
 
 def chase(B):
+    B = np.copy(B)
     m = B.shape[0]
     n = B.shape[1]
-    b = False
     Q = np.eye(m)
-    
-    if abs(B[1, 0]) < epsilon:
-            B[1, 0] = 0
-            b = True
-    
-    v = np.zeros(3)    
+    v = np.zeros(3)
     for k in range(n-1):
+        
         alfa = - np.sign(B[k+1, k]) * np.linalg.norm(B[k+1:k+4, k], ord=2)
         r = np.sqrt(0.5 * (alfa ** 2 - B[k+1, k] * alfa))
         if abs(r) < epsilon:
@@ -72,25 +58,10 @@ def chase(B):
             Qk[k+1:n, k+1:n] = Qk[k+1:n, k+1:n] - 2 * np.outer(v[0:n-k-1],v[0:n-k-1])
         else:
             Qk[k+1, k+1] = Qk[k+1, k+1] - 2 * np.outer(v[0],v[0])
-        B = Qk.dot(B.dot(Qk))
-        Q = np.dot(Q, Qk)
-    return B, Q, b
-
-
-def balance(A):
-    n = A.shape[0]
-    d = np.eye(n,n)
-    B = np.array(A)
-    for _ in range(2):
-        for i in range(n):
-            c = np.linalg.norm(B[:,i])
-            r = np.linalg.norm(B[i,:])
-            f = np.sqrt(r / c)
-            d[i, i] = f * d[i,i]
-            B[:, i] = f * B[:, i]
-            B[i, :] = B[i, :] / f
-                
-    return B, d
+        B = Qk @ B @ Qk
+        Q = Q @ Qk
+    
+    return Q
                 
 def sort_eigval(B, Q):
     sortlist = np.argsort(B)
@@ -103,31 +74,26 @@ def sort_eigval(B, Q):
         j += 1
     return Bp, Qp
     
-    
-    
 def francis(A):
-    B1, D = balance(A)
-    Q = np.linalg.inv(D)
-    
-    B, Q1, _ = tridiag(B1)
-    Q = np.dot(Q, Q1)
+    B = np.copy(np.asarray(A))
+    B, Q = tridiag(B)
     
     i = 0
-    j = B.shape[0] - 1
+    j = 0
     
     aux1 = np.eye(3)
-    nor = np.linalg.norm(A)
-    while i < B.shape[0] - 1:
+    while i < B.shape[0] - 2:
         if  i >= j:
             i = j
             j = B.shape[0] - 1
-        while i < j:
+        
+        while i < j and i < B.shape[0] - 2:
             if j - i >= 2:
                 p1, p2 = two_by_two_eigval(B[j-1:j+1, j-1:j+1])
             else:
                 p1, p2 = two_by_two_eigval(B[-2:,-2:])
-            x = np.dot(B[i:i+3, i:i+2] - p1 * np.eye(3,2), B[i:i+2, i:i+1] - p2 * np.eye(2,1))
             
+            x = np.dot(B[i:i+3, i:i+2] - p1 * np.eye(3,2), B[i:i+2, i:i+1] - p2 * np.eye(2,1))
             u = x / np.linalg.norm(x)
             u = -u if u[0] < 0 else u
             u[0] += 1
@@ -135,15 +101,17 @@ def francis(A):
             p = aux1 - beta * np.dot(u,u.T)
             Q0 = np.eye(A.shape[0])
             Q0[i:i+3,i:i+3] = p
-            Q = np.dot(Q, Q0)
+            Q = Q @ Q0
             
-            B = Q0.dot(B.dot(Q0))
+            B = Q0 @ B @ Q0
             
             # check if bulge
             if abs(B[i+2, i]) > epsilon:
-                B[i:j+1, i:j+1], Qk, b = chase(B[i:j+1, i:j+1])
-                Q[i:j+1, i:j+1] = np.dot(Q[i:j+1, i:j+1], Qk)
-                i = i + 1 if b else i
+                Qk = chase(B[i:j+1, i:j+1])
+                Q0 = np.eye(A.shape[0])
+                Q0[i:j+1, i:j+1] = Qk
+                Q = Q @ Q0
+                B = Q0.T @ B @ Q0
            
             for x in range(i, j):
                 if abs(B[x+1, x]) < epsilon:
@@ -158,133 +126,45 @@ def francis(A):
                     j = x
                     break
         i += 1
-
-    if abs(B[j, j-1]) < np.finfo(np.float).eps * nor:
-        B[j, j-1] = 0
-    else:
-        p1, p2 = two_by_two_eigval(B[-2:, -2:])
-        B[j-1, j-1] = p1
-        B[j,j] = p2
-    B, Q = sort_eigval(np.diagonal(B), Q)
+    B = np.copy(np.diagonal(B))
+    B, Q = sort_eigval(B, Q)
     return B, Q
-
-def house_red(A):
-    m = A.shape[0]
-    n = A.shape[1]
-    B = np.copy(A)
-    U = np.eye(m)
-    V = np.eye(n)
-    
-#    Qk = np.eye(m)
-    for k in range(n):
-        print(k)
-        v1 = np.array(B[k:,k])
-        v1[0] += np.sign(v1[0]) * np.linalg.norm(v1, ord=2)
-        v1 /= np.linalg.norm(v1, ord=2)
-        
-#        np.subtract(Qk[k:, k:], 2 * np.outer(v1, v1) / np.dot(v1, v1), Qk[k:, k:])
-        np.subtract(B[k:, k:], 2 * np.outer(v1, np.dot(v1, B[k:, k:])) / np.dot(v1, v1), B[k:, k:])
-#        B = np.dot(Qk, B)
-#        U = np.dot(U, Qk)
-#        if k < n-2:
-#            a2 = B[k, k+1:]
-#            v2 = np.array(a2)
-#            v2[0] += np.sign(a2[0]) * np.linalg.norm(a2, ord=2 )
-#            v2  /= np.linalg.norm(v2, ord=2)
-#            v2 /= v2[0]
-#            Pk = np.identity(n)
-#            np.subtract(Pk[k+1:, k+1:], 2 * np.outer(v2, v2) / np.dot(v2, v2), Pk[k+1:, k+1:])
-#            B = np.dot(B, Pk)
-#            V = np.dot(Pk, V)
-
-    return B, U, V
-
-def demm_kah_rot(f, g):
-    if abs(f) <  np.finfo(np.float).eps:
-        c, s, r = 0, 1, g
-        return c, s, r
-    elif abs(f) > abs(g):
-        t = g / f
-        t1 = np.sqrt(1 + np.power(t, 2))
-        c = 1 / t1
-        s = t * c
-        r = f * t1
-        return c, s, r
-    else:
-        t = f / g
-        t1 = np.sqrt(1 + np.power(t, 2))
-        s = 1 / t1
-        c = t * s
-        r = g * t1
-        return c, s, r
-
-def sweep(B):
-    n = B.shape[1]
-    d = np.array(np.diagonal(B))
-    e = np.array(np.diagonal(B, offset=1))
-    
-    Rp = np.eye(n)
-    Rq = np.eye(n)
-    while np.any(np.abs(e) > np.finfo(np.float).eps * 100):
-        c = 1
-        co = 1
-        so = 1
-        for i in range(0, n-1):
-            if abs(e[i]) <= np.finfo(np.float).eps * 100:
-                e[i] = 0
-        for i in range(0, n-1):
-            c, s, r = demm_kah_rot(c * d[i], e[i])
-            if i != 0:
-                e[i-1] = r * so
-            Rpa = np.eye(n)
-            Rpa[i:i+2, i:i+2] = np.mat([[c, s], [-s, c]])
-            
-            Rp = np.dot(Rp, Rpa)
-            co, so, d[i] = demm_kah_rot(co * r, d[i+1] * s)
-            
-            Rqa = np.eye(n)
-            Rqa[i:i+2, i:i+2] = np.mat([[co, so], [-so, co]])
-            Rq = np.dot(Rqa, Rq)
-        h = c * d[n-1]
-        e[n-2] = h * so
-        d[n-1] = h * co
-    B[:n, :n] = np.diag(np.abs(d))
-    return np.abs(d), B
-
-def gr_svd(A):
-    B, U, V = house_red(A)
-    
-    for i in range(B.shape[0]):
-        for j in range(B.shape[1]):
-            if abs(B[i,j]) <= np.finfo(np.float32).eps :
-                B[i, j] = 0
-    
-    b, B = sweep(B)
-    return b
-        
     
     
 if __name__ == "__main__":
-    A = np.matrix([[ 4., 1., -2., 2.],
-                   [ 1., -2.,  0., 1.],
-                   [-2., 0.,  3., -2.],
-                   [ 2., 1., -2., -1.]])
-#    A = np.matrix([[ 4., 3., 1.],
-#                   [ 3., 4., 2.],
-#                   [ 1., 2., 4.]])
+#    A = np.matrix([[ 4., 1., -2., 2.],
+#                   [ 1., -2.,  0., 1.],
+#                   [-2., 0.,  3., -2.],
+#                   [ 2., 1., -2., -1.]])
+    A = np.matrix([[ 4., 3., 1.],
+                   [ 3., 4., 2.],
+                   [ 1., 2., 4.]])
 #    
 #    A = np.matrix([[  1.,   2.,   3.,],
 #                 [  4.,   5.,   6.,],
 #                 [  7.,   8.,   9.,],
 #                 [ 10.,  -1.,  12.,]])
 #    a1,_ = np.linalg.eig(A)
+
 #    A = np.array([[1, 2, 3],
 #                 [3, 4, 5],
 #                 [6, 7, 8]])
-    a = np.linalg.eig(A)[0]
-    print(a)
     
-    print(francis(A)[0])
+    a, e = np.linalg.eig(A)
+    print(a, '\n', e)
+    print(np.dot(e, np.dot(np.diag(a), e.T)))
+    
+    a1, e1 = francis(A)
+#    e1[:,0] = - e1[:,0]
+#    aux = np.copy(e1[:, 2])
+#    e1[:, 2] = e1[:,1]
+#    e1[:, 1] = aux
+#    aux1 = a1[2]
+#    a1[2] = a1[1]
+#    a1[1] = aux1
+    print(a1, '\n', e1)
+    print("\n")
+    print(np.dot(e1, np.dot(np.diag(a1), e1.T)))
     
 #    B, Q = tridiag(A)
 #    print(B)

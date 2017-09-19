@@ -74,7 +74,7 @@ def get_kernel_accuracy(eigvect_k, mean, og_mat, base_path, subjects, samples, b
     print("success rate: %2f" % (success / (success + fail)))
     print("fail rate: %2f" % (fail / (success + fail)))
 
-def predict_all(trainproj, testp,  base_path, subjects, samples, base_samples):
+def predict_all(trainproj, testp,  subjects, samples, base_samples):
     
     class_list = [i for i in range(subjects) for j in range(base_samples)]
     clf = svm.LinearSVC(random_state=0)
@@ -133,15 +133,14 @@ if __name__ == "__main__":
     eigval_k, eigvect_k = svd.francis(k)
     end = time.perf_counter()
     print("tiempo de corrida: {}".format(end - sta))
-    
-    
+    print(eigvect_k.shape)
     eigval_k1 = np.flipud(eigval_k1)
     eigvect_k1 = np.fliplr(eigvect_k1)
     
     for i in range(len(eigval_k)):
         print(eigval_k1[i], eigval_k[i], abs(eigval_k[i] - eigval_k1[i]), i)
     
-    exit(0)
+    
     for i in range(len(eigval_k)):
         eigvect_k[:, i] = eigvect_k[:, i] / np.sqrt(abs(eigval_k[i]))
     
@@ -157,13 +156,15 @@ if __name__ == "__main__":
     n2 = 1 / trainno * np.matrix(np.ones([testno, trainno]))
     
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
+    
+    print("a", testp_k.shape)
     trainproj = k * eigvect_k
     testp = testp_k * eigvect_k
     
     g = [[],[]]
     
     for i in range(1, eigvect_k.shape[1]+1):
-        aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], "orl_faces", subjects, samples, bsamples)
+        aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], subjects, samples, bsamples)
         g[0].append(i)
         g[1].append(aux*100)
         print("using {0} eigenvectors: {1}".format(i, aux))
