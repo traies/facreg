@@ -141,6 +141,7 @@ if __name__ == "__main__":
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
             tests.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            print("our_faces/s" + str(x) + "/" + str(j) + ".pgm")
     testm = np.array(tests)
     testm -= mean
     
@@ -150,16 +151,41 @@ if __name__ == "__main__":
     class_list = [i for i in range(subjects) for j in range(bsamples)]
     testl = [i for i in range(subjects) for j in range(bsamples, samples)]
     g = [[],[]]
-    for i in range(1, trainproj.shape[1] + 1):
-        aux = predict_all(trainproj[:, 0:i], testproj[:, 0:i], class_list, testl)
-        g[0].append(i)
-        g[1].append(aux*100)
-        print("using {0} eigenvectors: {1}".format(i, aux))
-        
-    plt.plot(g[0],g[1])
+    #for i in range(1, trainproj.shape[1] + 1):
+    #    aux = predict_all(trainproj[:, 0:i], testproj[:, 0:i], class_list, testl)
+    #    g[0].append(i)
+    #    g[1].append(aux*100)
+    #    print("using {0} eigenvectors: {1}".format(i, aux))
+
+    #import numpy as np
+
+    #X = np.array([[-1, -1], [-2, -1], [1, 1], [2, 1]])
+    #y = np.array([1, 1, 2, 2])
+    from sklearn.svm import SVC
+
+    clf = SVC()
+    clf.fit(trainproj, class_list)
+
+    clf.decision_function(testproj)
+    print(clf.predict(testproj))
+    print(testl)
+    #a = clf.predict(testproj)
+    #for i in range(1, len(a)):
+     #   if a[i] == 0:
+      #      print("Es Juan Manuel")
+       # elif a[i] == 1:
+        #    print("Es Tomás")
+        #elif a[i] == 2:
+        #    print("Es Angie")
+        #elif a[i] == 3:
+        #    print("Es Mauri")
+        #elif a[i] == 4:
+         #   print("Es Agop")
+
+    #plt.plot(g[0],g[1])
     #plt.show()
-    plt.suptitle('Porcentaje de acierto según cantidad de autocaras',fontweight='bold')
-    plt.ylabel('Acierto (%)')
-    plt.xlabel('Autocaras')
-    plt.savefig('plots/pca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
+    #plt.suptitle('Porcentaje de acierto según cantidad de autocaras',fontweight='bold')
+    #plt.ylabel('Acierto (%)')
+    #plt.xlabel('Autocaras')
+    #plt.savefig('plots/pca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
     
