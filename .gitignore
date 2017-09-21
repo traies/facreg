@@ -1,6 +1,9 @@
 compressed/*
 alt_eigenfaces/*
 eigenfaces/*
+pca_eigenfaces/*
+mean/*
+plots/*
 
 # IDEA
 .idea/
