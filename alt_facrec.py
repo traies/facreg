@@ -90,7 +90,7 @@ if __name__ == "__main__":
     samples = 10
     
     #Number of subjects
-    subjects = 40
+    subjects = 5
     
     #Width of .pmg files
     width = 92
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     s = []
     for x in range(1, subjects + 1):
         for j in range(1, bsamples + 1):
-            s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            s.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
     mat = np.array(s)
@@ -133,14 +133,14 @@ if __name__ == "__main__":
     
     # print eigenfaces
     for i in range(trainno):
-        save_8_bit_pgm("alt_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
+        save_8_bit_pgm("pca_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
     
     printmean = (mean - min(mean)) * 255 / (max(mean) - min(mean))
-    save_8_bit_pgm("mean.pgm", printmean.astype(int), 92, 112)
+    save_8_bit_pgm("mean/mean.pgm", printmean.astype(int), 92, 112)
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
-            tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            tests.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
     testm = np.array(tests)
     testm -= mean
     
@@ -158,8 +158,8 @@ if __name__ == "__main__":
         
     plt.plot(g[0],g[1])
     #plt.show()
-    plt.suptitle('Prediction accuracy depending on the number of eigenvectors',fontweight='bold')
-    plt.ylabel('accuracy (%)')
-    plt.xlabel('eigenvectors')
+    plt.suptitle('Porcentaje de acierto según cantidad de autocaras',fontweight='bold')
+    plt.ylabel('Acierto (%)')
+    plt.xlabel('Autocaras')
     plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
     

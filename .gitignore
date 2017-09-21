@@ -5,3 +5,4 @@ eigenfaces/*
 # IDEA
 .idea/
 __pycache__/
+mean.pgm
