@@ -1,3 +1,7 @@
 compressed/*
 alt_eigenfaces/*
 eigenfaces/*
+
+# IDEA
+.idea/
+__pycache__/
