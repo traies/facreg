@@ -7,7 +7,7 @@ Created on Tue Sep  5 10:13:05 2017
 """
 import numpy as np
 from sklearn import svm
-import svd as my_svd
+import eigen as my_svd
 import time
 import matplotlib.pyplot as plt
 
@@ -121,19 +121,18 @@ if __name__ == "__main__":
     end = time.perf_counter()
     print("tiempo de corrida: {}".format(end - sta))
     
-    # eigenfaces 
-    eigvect = 1 / (trainno - 1) * eigvect @ mat
-    eigenfaces = np.diag(eigval) @ eigvect 
-    
+    eigvect = 1 / (trainno - 1) * mat.T @ eigvect 
+    eigenfaces =  eigvect @ np.diag(eigval)
     
     # eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
+        
         a = np.squeeze(np.asarray(eigenfaces[:,i]))
         e.append((a - min(a)) * 255 / (max(a) - min(a)))
     
     # print eigenfaces
-    for i in range(subjects * bsamples):
+    for i in range(trainno):
         save_8_bit_pgm("alt_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
     
     tests = []
@@ -143,8 +142,8 @@ if __name__ == "__main__":
     testm = np.array(tests)
     testm -= mean
     
-    trainproj = mat @ eigvect.T 
-    testproj = testm @ eigvect.T
+    trainproj = mat @ eigvect
+    testproj = testm @ eigvect
     # Print prediction success rate
     class_list = [i for i in range(subjects) for j in range(bsamples)]
     testl = [i for i in range(subjects) for j in range(bsamples, samples)]

@@ -13,7 +13,7 @@ def two_by_two_eigval(M):
     a,b,c,d = M.flat
     T = a + d
     D = a * d - b * c
-    square = np.sqrt(T ** 2 / 4 - D)
+    square = np.sqrt(T ** 2 / 4 - D, dtype=complex)
     l1 = T / 2 + square
     l2 = T / 2 - square
     return l1, l2
@@ -93,7 +93,8 @@ def francis(A):
             else:
                 p1, p2 = two_by_two_eigval(B[-2:,-2:])
             
-            x = np.dot(B[i:i+3, i:i+2] - p1 * np.eye(3,2), B[i:i+2, i:i+1] - p2 * np.eye(2,1))
+            x = np.asarray((B[i:i+3, i:i+2] - p1 * np.eye(3,2)) @ (B[i:i+2, i:i+1] - p2 * np.eye(2,1)))
+            x = np.real_if_close(x)
             u = x / np.linalg.norm(x)
             u = -u if u[0] < 0 else u
             u[0] += 1
@@ -126,6 +127,27 @@ def francis(A):
                     j = x
                     break
         i += 1
+        
+    n = B.shape[0]
+    A = B[n-2:, n-2:]
+    while abs(A[1, 0]) > epsilon:
+      # Gram schmidt qr decomp.
+      a1 = A[:, 0]
+      a2 = A[:, 1]
+      u1 = a1
+      e1 = u1 / np.linalg.norm(u1)
+      u2 = a2 - ((u1.conj().T @ a2) / (u1.conj().T @ u1)) * u1
+      e2 = u2 / np.linalg.norm(u2)
+      Q1 = np.array([e1, e2]).T
+      R = np.zeros([2,2])
+      R[0,0] = e1.T @ a1
+      R[0,1] = e1.T @ a2
+      R[1,1] = e2.T @ a2
+      Q0 = np.eye(n, n)
+      Q0[n-2:,n-2:] = Q1
+      Q = Q @ Q0
+      A = R @ Q1
+      B = Q0.T @ B @ Q0
     B = np.copy(np.diagonal(B))
     B, Q = sort_eigval(B, Q)
     return B, Q

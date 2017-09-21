@@ -106,6 +106,7 @@ def francis(A):
             else:
                 p1, p2 = two_by_two_eigval(B[-2:,-2:])
             
+#            print(p1, p2)
             x = np.asarray((B[i:i+3, i:i+2] - p1 * np.eye(3,2)) @ (B[i:i+2, i:i+1] - p2 * np.eye(2,1)))
             x = np.real_if_close(x)
             u = x / np.linalg.norm(x)
@@ -129,6 +130,7 @@ def francis(A):
                 B = Q0.T @ B @ Q0
                 
             for x in range(i, j):
+                print(x, B[x+1, x])
                 if abs(B[x+1, x]) < epsilon:
                     B[x+1, x] = 0.0
                     i += 1
@@ -178,9 +180,9 @@ if __name__ == "__main__":
 #                   [ -1., -2.,  0., 1.],
 #                   [-2., 0.,  3., -2.],
 #                   [ 2., 1., -2., -1.]])
-    A = np.matrix([[ 4.+0j, 3., 1.],
-                   [ 2., 4., 2.],
-                   [ 1., 2., 4.]])
+    A = np.matrix([[0 , 0., 1.],
+                   [ 0., 1., 0.],
+                   [ -1., 0., 0.]])
 #    
 #    A = np.matrix([[  1.,   2.,   3.,],
 #                 [  4.,   5.,   6.,],
@@ -196,17 +198,17 @@ if __name__ == "__main__":
     print(a, '\n', e)
     print(np.dot(e, np.dot(np.diag(a), np.linalg.inv(e))))
     
-    a1, e1 = francis(A)
+#    a1, e1 = francis(A)
 #    e1[:,0] = - e1[:,0]
 #    aux = np.copy(e1[:, 2])
 #    e1[:, 2] = e1[:,1]
 #    e1[:, 1] = aux
 #    aux1 = a1[2]
 #    a1[2] = a1[1]
-#    a1[1] = aux1
-    print('\n')
-    print(a1, '\n', e1)
-    print(np.dot(e1, np.dot(np.diag(a1), np.linalg.inv(e1))))
+##    a1[1] = aux1
+#    print('\n')
+#    print(a1, '\n', e1)
+#    print(np.dot(e1, np.dot(np.diag(a1), np.linalg.inv(e1))))
     
 #    B, Q = tridiag(A)
 #    print(B)
