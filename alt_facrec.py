@@ -161,5 +161,5 @@ if __name__ == "__main__":
     plt.suptitle('Porcentaje de acierto según cantidad de autocaras',fontweight='bold')
     plt.ylabel('Acierto (%)')
     plt.xlabel('Autocaras')
-    plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
+    plt.savefig('plots/pca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
     

@@ -9,7 +9,7 @@ Created on Wed Sep  6 14:42:01 2017
 import matplotlib.pyplot as plt
 
 import numpy as np
-import svd as svd
+import eigen as eigen
 import time
 
 from sklearn import svm
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     samples = 10
     
     #Number of subjects
-    subjects = 40
+    subjects = 5
     
     #Width of .pmg files
     width = 92
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     testno = subjects * (samples - bsamples)
     for x in range(1, subjects + 1):
         for j in range(1, bsamples + 1):
-            s.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            s.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
         
     # I want rows to be subjects
     mat = np.matrix(s)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     eigval_k1, eigvect_k1 = np.linalg.eigh(k)
     
     sta = time.perf_counter()
-    eigval_k, eigvect_k = svd.francis(k)
+    eigval_k, eigvect_k = eigen.francis(k)
     end = time.perf_counter()
     print("tiempo de corrida: {}".format(end - sta))
     print(eigvect_k.shape)
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
-            tests.append(load_8_bit_pgm("orl_faces/s" + str(x) + "/"+str(j)+".pgm"))
+            tests.append(load_8_bit_pgm("our_faces/s" + str(x) + "/"+str(j)+".pgm"))
     testm = np.matrix(tests)
     testm -= mean
     
@@ -170,10 +170,9 @@ if __name__ == "__main__":
         print("using {0} eigenvectors: {1}".format(i, aux))
         
     plt.plot(g[0],g[1])
-    #plt.show()
-    plt.suptitle('Prediction accuracy depending on the number of eigenvectors',fontweight='bold')
-    plt.ylabel('accuracy (%)')
-    plt.xlabel('eigenvectors')
-    plt.savefig('plots/orl_b' + str(bsamples) + '_s' + str(subjects) + '.png')
+    plt.suptitle('Porcentaje de acierto según cantidad de autocaras', fontweight='bold')
+    plt.ylabel('Acierto (%)')
+    plt.xlabel('Autocaras')
+    plt.savefig('plots/kpca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
 
     
