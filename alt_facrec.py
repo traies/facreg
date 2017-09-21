@@ -135,6 +135,8 @@ if __name__ == "__main__":
     for i in range(trainno):
         save_8_bit_pgm("alt_eigenfaces/eigenface"+str(i)+".pgm", e[i].astype(int), 92, 112)
     
+    printmean = (mean - min(mean)) * 255 / (max(mean) - min(mean))
+    save_8_bit_pgm("mean.pgm", printmean.astype(int), 92, 112)
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
