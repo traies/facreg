@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # Center the matrix
     mat -= mean
 
-    # cov of the matrix
+    # Covariance of the matrix
     cov = 1 / (trainno - 1) *  mat @ mat.T
     sta = time.perf_counter()
     eigval, eigvect = eigen.francis(cov)
@@ -70,19 +70,21 @@ if __name__ == "__main__":
     eigvect = 1 / (trainno - 1) * mat.T @ eigvect 
     eigenfaces =  eigvect @ np.diag(eigval)
     
-    # eigenfaces normalization for image
+    # Eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
         
         a = np.squeeze(np.asarray(eigenfaces[:,i]))
         e.append((a - min(a)) * maxgrey / (max(a) - min(a)))
     
-    # print eigenfaces
+    # Print eigenfaces
     for i in range(trainno):
         save_8_bit_pgm(path_eigenfaces + "eigenface"+str(i)+".pgm", e[i].astype(int), width, height)
-    
+
+    # Print mean
     printmean = (mean - min(mean)) * maxgrey / (max(mean) - min(mean))
     save_8_bit_pgm(path_mean + "mean.pgm", printmean.astype(int), width, height)
+
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
