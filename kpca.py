@@ -11,23 +11,11 @@ import matplotlib.pyplot as plt
 import eigen as eigen
 import time
 from utils.pgm_utils import *
-from utils.directory_utils import *
+from utils.svm_utils import *
+from utils.plot_utils import *
 
 path_faces = "our_faces/"
 path_plots = "plots/"
-
-from sklearn import svm
-
-
-def predict_all(trainproj, testp,  subjects, samples, base_samples):
-    
-    class_list = [i for i in range(subjects) for j in range(base_samples)]
-    clf = svm.LinearSVC(random_state=0)
-    clf.fit(trainproj, class_list)
-    
-    testl = [i for i in range(subjects) for j in range(base_samples, samples)]
-    return clf.score(testp, testl)
-
 
 if __name__ == "__main__":
     
@@ -61,7 +49,9 @@ if __name__ == "__main__":
     # Center the matrix
     mean = mat.mean(axis=0)
     mat -= mean
-    
+
+    sta = time.perf_counter()
+
     # Compute kernel matrix K (using k(x, y) = (x * y) ** exp)
     k = np.power(mat  * mat.T  / trainno + 1 , exp) 
     
@@ -70,25 +60,19 @@ if __name__ == "__main__":
 
     # Center k matrix
     k = k - n * k - k * n + n * k * n 
-    
-    # Get eigenvectors and eigenvalues of K
-    eigval_k1, eigvect_k1 = np.linalg.eigh(k)
-    
-    sta = time.perf_counter()
+
     eigval_k, eigvect_k = eigen.francis(k)
-    end = time.perf_counter()
-    print("tiempo de corrida: {}".format(end - sta))
-    print(eigvect_k.shape)
-    eigval_k1 = np.flipud(eigval_k1)
-    eigvect_k1 = np.fliplr(eigvect_k1)
-    
-    for i in range(len(eigval_k)):
-        print(eigval_k1[i], eigval_k[i], abs(eigval_k[i] - eigval_k1[i]), i)
-    
-    
+
     for i in range(len(eigval_k)):
         eigvect_k[:, i] = eigvect_k[:, i] / np.sqrt(abs(eigval_k[i]))
-    
+
+    end = time.perf_counter()
+    print("----")
+    print("KPCA")
+    print("----")
+    print("Tiempo de corrida: {}".format(end - sta))
+
+    # Projection and Clasification
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
@@ -101,24 +85,15 @@ if __name__ == "__main__":
     n2 = 1 / trainno * np.matrix(np.ones([testno, trainno]))
     
     testp_k = testp_k - n2 * k - testp_k * n + n2 * k * n 
-    
-    print("a", testp_k.shape)
+
     trainproj = k * eigvect_k
-    testp = testp_k * eigvect_k
-    
-    g = [[],[]]
-    
-    for i in range(1, eigvect_k.shape[1]+1):
-        aux = predict_all(trainproj[:, 0:i], testp[:, 0:i], subjects, samples, bsamples)
-        g[0].append(i)
-        g[1].append(aux*100)
-        print("using {0} eigenvectors: {1}".format(i, aux))
-        
-    plt.plot(g[0],g[1])
-    plt.suptitle('Porcentaje de acierto según cantidad de autocaras', fontweight='bold')
-    plt.ylabel('Acierto (%)')
-    plt.xlabel('Autocaras')
-    validateDirectory(path_plots)
-    plt.savefig(path_plots + 'kpca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
+    testproj = testp_k * eigvect_k
+
+    class_list = [i for i in range(subjects) for j in range(bsamples)]
+    testl = [i for i in range(subjects) for j in range(bsamples, samples)]
+    g = print_predict_all(trainproj, testproj, class_list, testl)
+    print_predict(trainproj, testproj, class_list, testl)
+
+    plot_predict_all(path_plots, g, bsamples, subjects, 'kpca_train')
 
     

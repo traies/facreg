@@ -5,12 +5,11 @@ Created on Tue Sep  5 10:13:05 2017
 
 @author: traies
 """
-from sklearn import svm
 import eigen as eigen
 import time
-import matplotlib.pyplot as plt
 from utils.pgm_utils import *
-from utils.directory_utils import *
+from utils.svm_utils import *
+from utils.plot_utils import *
 
 path_faces = "our_faces/"
 path_plots = "plots/"
@@ -18,15 +17,6 @@ path_mean = "mean/"
 path_eigenfaces = "pca_eigenfaces/"
 
 
-def predict_all(trainproj, testproj, class_list, testl):
-    
-    clf = svm.LinearSVC( random_state=0)
-    clf.fit(trainproj, class_list)
-    
-    
-    return clf.score(testproj, testl)
-    
-    
 if __name__ == "__main__":
     
     #Base samples
@@ -59,17 +49,18 @@ if __name__ == "__main__":
     
     # Center the matrix
     mat -= mean
-
+    sta = time.perf_counter()
     # Covariance of the matrix
     cov = 1 / (trainno - 1) *  mat @ mat.T
-    sta = time.perf_counter()
     eigval, eigvect = eigen.francis(cov)
-    end = time.perf_counter()
-    print("tiempo de corrida: {}".format(end - sta))
-    
+
     eigvect = 1 / (trainno - 1) * mat.T @ eigvect 
     eigenfaces =  eigvect @ np.diag(eigval)
-    
+    end = time.perf_counter()
+    print("----")
+    print("PCA")
+    print("----")
+    print("Tiempo de corrida: {}".format(end - sta))
     # Eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
@@ -85,6 +76,7 @@ if __name__ == "__main__":
     printmean = (mean - min(mean)) * maxgrey / (max(mean) - min(mean))
     save_8_bit_pgm(path_mean + "mean.pgm", printmean.astype(int), width, height)
 
+    # Projection and Clasification
     tests = []
     for x in range(1, subjects + 1):
         for j in range(bsamples+1, samples + 1):
@@ -97,17 +89,7 @@ if __name__ == "__main__":
     # Print prediction success rate
     class_list = [i for i in range(subjects) for j in range(bsamples)]
     testl = [i for i in range(subjects) for j in range(bsamples, samples)]
-    g = [[],[]]
-    for i in range(1, trainproj.shape[1] + 1):
-        aux = predict_all(trainproj[:, 0:i], testproj[:, 0:i], class_list, testl)
-        g[0].append(i)
-        g[1].append(aux*100)
-        print("using {0} eigenvectors: {1}".format(i, aux))
-        
-    plt.plot(g[0],g[1])
-    plt.suptitle('Porcentaje de acierto según cantidad de autocaras',fontweight='bold')
-    plt.ylabel('Acierto (%)')
-    plt.xlabel('Autocaras')
-    validateDirectory(path_plots)
-    plt.savefig(path_plots + 'pca_train' + str(bsamples) + '_subjects' + str(subjects) + '.png')
-    
+    g = print_predict_all(trainproj, testproj, class_list, testl)
+    print_predict(trainproj, testproj, class_list, testl)
+
+    plot_predict_all(path_plots, g, bsamples, subjects, 'pca_train')
