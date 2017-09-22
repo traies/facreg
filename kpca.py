@@ -6,8 +6,6 @@ Created on Wed Sep  6 14:42:01 2017
 @author: traies
 """
 
-import matplotlib.pyplot as plt
-
 import eigen as eigen
 import time
 from utils.pgm_utils import *
@@ -95,5 +93,3 @@ if __name__ == "__main__":
     print_predict(trainproj, testproj, class_list, testl)
 
     plot_predict_all(path_plots, g, bsamples, subjects, 'kpca_train')
-
-    

@@ -49,18 +49,27 @@ if __name__ == "__main__":
     
     # Center the matrix
     mat -= mean
-    sta = time.perf_counter()
+    start = time.perf_counter()
     # Covariance of the matrix
     cov = 1 / (trainno - 1) *  mat @ mat.T
+
+    startF = time.perf_counter()
     eigval, eigvect = eigen.francis(cov)
+    endF = time.perf_counter()
 
     eigvect = 1 / (trainno - 1) * mat.T @ eigvect 
     eigenfaces =  eigvect @ np.diag(eigval)
     end = time.perf_counter()
+
+    print("-------")
+    print("Francis")
+    print("-------")
+    print("Tiempo de corrida: %.3f segundos" % (endF - startF))
+
     print("----")
     print("PCA")
     print("----")
-    print("Tiempo de corrida: {}".format(end - sta))
+    print("Tiempo de corrida: {}".format(end - start))
     # Eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
