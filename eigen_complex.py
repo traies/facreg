@@ -84,7 +84,6 @@ def get_eigvect(T):
         eigvect[i, i] = 1
         eigvect[i+1:, i] = 0
     
-    eige_val, eige_vect = np.linalg.eig(T)
     eigval = np.diagonal(T)
     return eigval, eigvect
 
