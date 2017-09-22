@@ -47,17 +47,23 @@ if __name__ == "__main__":
     # Mean of each pixel
     mean = mat.mean(axis=0)
     
+    print(mat)
     # Center the matrix
     mat -= mean
     start = time.perf_counter()
     # Covariance of the matrix
-    cov = 1 / (trainno - 1) *  mat @ mat.T
-
+    cov = mat @ mat.T
+    
+    sta = np.max(cov)
+    cov /= sta
+    
+    print(cov)
+    print(cov.shape)
     startF = time.perf_counter()
     eigval, eigvect = eigen.francis(cov)
     endF = time.perf_counter()
 
-    eigvect = 1 / (trainno - 1) * mat.T @ eigvect 
+    eigvect = 1 / sta *  mat.T @ eigvect 
     eigenfaces =  eigvect @ np.diag(eigval)
     end = time.perf_counter()
 
@@ -70,7 +76,7 @@ if __name__ == "__main__":
     print("PCA")
     print("----")
     print("Tiempo de corrida: {}".format(end - start))
-    # Eigenfaces normalization for image
+#    # Eigenfaces normalization for image
     e = []
     for i in range(eigenfaces.shape[1]):
         
