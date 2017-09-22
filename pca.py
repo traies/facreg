@@ -47,7 +47,6 @@ if __name__ == "__main__":
     # Mean of each pixel
     mean = mat.mean(axis=0)
     
-    print(mat)
     # Center the matrix
     mat -= mean
     start = time.perf_counter()
@@ -57,8 +56,6 @@ if __name__ == "__main__":
     sta = np.max(cov)
     cov /= sta
     
-    print(cov)
-    print(cov.shape)
     startF = time.perf_counter()
     eigval, eigvect = eigen.francis(cov)
     endF = time.perf_counter()
